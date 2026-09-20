@@ -100,11 +100,11 @@ class Player(Body):
     def update(
         self,
         dt: float,
-        keys: pygame.key.ScancodeWrapper,
+        keys: set[str],
         solids: list[Solid],
         blocks: list[MetalBlock],
     ) -> None:
-        move = int(keys[pygame.K_d] or keys[pygame.K_RIGHT]) - int(keys[pygame.K_q] or keys[pygame.K_LEFT])
+        move = int("d" in keys or "right" in keys) - int("q" in keys or "left" in keys)
         if move:
             self.facing = move
         desired = move * PLAYER_SPEED
@@ -113,10 +113,10 @@ class Player(Body):
         self.velocity.y = min(950, self.velocity.y + GRAVITY * dt)
 
         actions = []
-        if keys[pygame.K_a]: actions.append(("left", "attract", CYAN))
-        if keys[pygame.K_z]: actions.append(("left", "repel", CYAN))
-        if keys[pygame.K_o]: actions.append(("right", "attract", ORANGE))
-        if keys[pygame.K_p]: actions.append(("right", "repel", ORANGE))
+        if "a" in keys: actions.append(("left", "attract", CYAN))
+        if "z" in keys: actions.append(("left", "repel", CYAN))
+        if "o" in keys: actions.append(("right", "attract", ORANGE))
+        if "p" in keys: actions.append(("right", "repel", ORANGE))
 
         self.active_beams.clear()
         for side, mode, color in actions:
@@ -132,9 +132,21 @@ class Player(Body):
         self, side: str, solids: list[Solid], blocks: list[MetalBlock]
     ) -> Solid | MetalBlock | None:
         origin = pygame.Vector2(self.rect.center)
+        # Les objets mobiles sont toujours prioritaires. Les plaques fixes ne
+        # servent d'ancrage au robot que lorsqu'aucun objet n'est à portée.
+        movable = self._nearest_on_side(side, origin, blocks)
+        if movable is not None:
+            return movable
+        return self._nearest_on_side(side, origin, [s for s in solids if s.metal])
+
+    def _nearest_on_side(
+        self,
+        side: str,
+        origin: pygame.Vector2,
+        candidates: list[Solid] | list[MetalBlock],
+    ) -> Solid | MetalBlock | None:
         best: Solid | MetalBlock | None = None
         best_distance = MAGNET_RANGE
-        candidates: list[Solid | MetalBlock] = [s for s in solids if s.metal] + blocks
         for target in candidates:
             delta = pygame.Vector2(target.rect.center) - origin
             if side == "left" and delta.x >= -8:
@@ -162,7 +174,6 @@ class Player(Body):
         force = MAGNET_FORCE * (1 - distance / MAGNET_RANGE * 0.45)
         if isinstance(target, MetalBlock):
             target.velocity += -direction * force * sign * dt / target.mass
-            self.velocity.x += direction.x * force * sign * dt * 0.18
         else:
             self.velocity += direction * force * sign * dt
         self.active_beams.append(MagnetBeam(side, mode, target, color))
