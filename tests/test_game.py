@@ -20,8 +20,8 @@ class GameSmokeTests(unittest.TestCase):
 
     def test_first_level_contains_expected_elements(self) -> None:
         self.assertEqual(len(self.game.cells), 2)
-        self.assertEqual(len(self.game.blocks), 3)
-        self.assertGreater(len(self.game.solids), 10)
+        self.assertEqual(len(self.game.blocks), 11)
+        self.assertEqual(len(self.game.solids), 5)
         self.assertEqual(self.game.collected_cells, 0)
 
     def test_generator_requires_both_cells(self) -> None:
@@ -59,6 +59,18 @@ class GameSmokeTests(unittest.TestCase):
         for _ in range(120):
             self.game.update(1 / 60)
         self.assertGreaterEqual(bridge.rect.x, 500)
+
+    def test_left_controls_move_an_object_on_the_left(self) -> None:
+        bridge = self.game.blocks[0]
+        bridge.rect.x = 60
+        self.game.held_keys = {"j"}
+        self.game.update(1 / 60)
+        self.assertEqual(self.game.player.active_beams[0].side, "left")
+        self.assertGreater(bridge.velocity.x, 0)
+
+    def test_every_metallic_level_element_is_movable(self) -> None:
+        self.assertFalse(any(solid.metal for solid in self.game.solids))
+        self.assertTrue(all(hasattr(block, "velocity") for block in self.game.blocks))
 
 
 if __name__ == "__main__":
