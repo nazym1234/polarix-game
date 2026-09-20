@@ -34,7 +34,7 @@ class Game:
         self.camera_x = 0.0
         self.elapsed = 0.0
         self.finished = False
-        self.hint = "Avance avec Q et D"
+        self.hint = "Avance avec A et D"
         self.hint_timer = 5.0
         self.shake = 0.0
         self.particles: list[dict[str, object]] = []
@@ -220,7 +220,7 @@ class Game:
 
     def _draw_guides(self, camera: float) -> None:
         guides = [
-            (270, 575, "Q / D  AVANCER", MUTED),
+            (270, 575, "A / D  AVANCER", MUTED),
             (345, 520, "O : ATTIRER · P : POUSSER", ORANGE),
             (565, 350, "POUSSE LA POUTRE POUR CRÉER UN PONT", YELLOW),
             (840, 500, "O : ATTIRE LA CAISSE VERS TOI", ORANGE),
@@ -258,8 +258,8 @@ class Game:
         self.screen.blit(count, (40, 57))
 
         active = []
-        if "a" in self.held_keys: active.append(("A  ATTRACTION GAUCHE", CYAN))
-        if "z" in self.held_keys: active.append(("Z  RÉPULSION GAUCHE", CYAN))
+        if "j" in self.held_keys: active.append(("J  ATTRACTION GAUCHE", CYAN))
+        if "k" in self.held_keys: active.append(("K  RÉPULSION GAUCHE", CYAN))
         if "o" in self.held_keys: active.append(("O  ATTRACTION DROITE", ORANGE))
         if "p" in self.held_keys: active.append(("P  RÉPULSION DROITE", ORANGE))
         if active:
