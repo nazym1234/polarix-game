@@ -25,10 +25,11 @@ class Game:
         self.small_font = pygame.font.Font(None, 20)
         self.big_font = pygame.font.Font(None, 72)
         self.running = True
+        self.held_keys: set[str] = set()
         self.reset()
 
     def reset(self) -> None:
-        self.player = Player(90, 560)
+        self.player = Player(150, 560)
         self.solids, self.blocks, self.cells, self.generator = make_level()
         self.camera_x = 0.0
         self.elapsed = 0.0
@@ -61,6 +62,7 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
+                self._remember_key(event, pressed=True)
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
                 elif event.key == pygame.K_SPACE and not self.finished:
@@ -69,6 +71,23 @@ class Game:
                     self.reset()
                 elif event.key == pygame.K_e:
                     self.activate_generator()
+            elif event.type == pygame.KEYUP:
+                self._remember_key(event, pressed=False)
+
+    def _remember_key(self, event: pygame.event.Event, pressed: bool) -> None:
+        """Utilise le caractère réellement tapé, fiable sur AZERTY et QWERTY."""
+        if event.key == pygame.K_LEFT:
+            key = "left"
+        elif event.key == pygame.K_RIGHT:
+            key = "right"
+        else:
+            key = event.unicode.lower()
+        if not key:
+            return
+        if pressed:
+            self.held_keys.add(key)
+        else:
+            self.held_keys.discard(key)
 
     def update(self, dt: float) -> None:
         self.elapsed += dt
@@ -77,15 +96,14 @@ class Game:
             self._update_particles(dt)
             return
 
-        keys = pygame.key.get_pressed()
-        self.player.update(dt, keys, self.solids, self.blocks)
+        self.player.update(dt, self.held_keys, self.solids, self.blocks)
         for block in self.blocks:
             block.update(dt, self.solids)
         self._collect_cells()
 
         if self.player.rect.top > HEIGHT + 150:
             x = self.player.rect.x
-            checkpoint = 1765 if x > 1650 else 1235 if x > 1100 else 680 if x > 560 else 90
+            checkpoint = 1765 if x > 1650 else 1235 if x > 1100 else 680 if x > 560 else 150
             self.player.rect.topleft = (checkpoint, 520)
             self.player.velocity.update(0, 0)
             self.shake = 12
@@ -203,8 +221,9 @@ class Game:
     def _draw_guides(self, camera: float) -> None:
         guides = [
             (270, 575, "Q / D  AVANCER", MUTED),
-            (575, 345, "Z  REPOUSSER À GAUCHE", CYAN),
-            (840, 500, "A  ATTIRER À GAUCHE", CYAN),
+            (345, 520, "O : ATTIRER · P : POUSSER", ORANGE),
+            (565, 350, "POUSSE LA POUTRE POUR CRÉER UN PONT", YELLOW),
+            (840, 500, "O : ATTIRE LA CAISSE VERS TOI", ORANGE),
             (1400, 270, "ATTIRE-TOI ENTRE LES PAROIS", YELLOW),
             (1990, 350, "P  REPOUSSER À DROITE", ORANGE),
         ]
@@ -237,6 +256,16 @@ class Game:
         count = self.font.render(f"CELLULES  {self.collected_cells} / 2", True, YELLOW)
         self.screen.blit(mission, (40, 32))
         self.screen.blit(count, (40, 57))
+
+        active = []
+        if "a" in self.held_keys: active.append(("A  ATTRACTION GAUCHE", CYAN))
+        if "z" in self.held_keys: active.append(("Z  RÉPULSION GAUCHE", CYAN))
+        if "o" in self.held_keys: active.append(("O  ATTRACTION DROITE", ORANGE))
+        if "p" in self.held_keys: active.append(("P  RÉPULSION DROITE", ORANGE))
+        if active:
+            text, color = active[-1]
+            status = self.small_font.render(text, True, color)
+            self.screen.blit(status, (WIDTH - status.get_width() - 28, 30))
 
         if self.player.rect.x > 2460:
             ready = self.collected_cells == 2
