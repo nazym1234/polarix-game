@@ -39,6 +39,10 @@ python main.py
 
 Le but du premier niveau est de récupérer deux cellules d'énergie, puis d'activer la machine située à la fin du parcours.
 
+Les objets métalliques mobiles sont prioritaires : `A` ou `O` les attirent vers le robot, tandis que `Z` ou `P` les repoussent. Les lettres de gauche agissent sur l'objet situé à gauche et celles de droite sur celui situé à droite. Lorsqu'aucun objet mobile n'est à portée, les mêmes commandes permettent au robot de s'attirer vers une structure métallique fixe.
+
+La première énigme consiste à pousser une poutre métallique dans le vide pour construire un pont.
+
 ## Tests
 
 ```bash
