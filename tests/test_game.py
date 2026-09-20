@@ -20,7 +20,7 @@ class GameSmokeTests(unittest.TestCase):
 
     def test_first_level_contains_expected_elements(self) -> None:
         self.assertEqual(len(self.game.cells), 2)
-        self.assertEqual(len(self.game.blocks), 2)
+        self.assertEqual(len(self.game.blocks), 3)
         self.assertGreater(len(self.game.solids), 10)
         self.assertEqual(self.game.collected_cells, 0)
 
@@ -38,6 +38,27 @@ class GameSmokeTests(unittest.TestCase):
         self.game.update(1 / 60)
         self.game.draw()
         self.assertEqual(self.game.screen.get_size(), (1280, 720))
+
+    def test_character_input_activates_right_magnet(self) -> None:
+        event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_o, unicode="o")
+        self.game._remember_key(event, pressed=True)
+        self.game.update(1 / 60)
+        self.assertIn("o", self.game.held_keys)
+        self.assertTrue(self.game.player.active_beams)
+        self.assertEqual(self.game.player.active_beams[0].side, "right")
+
+    def test_right_magnet_moves_the_bridge_instead_of_the_player(self) -> None:
+        bridge = self.game.blocks[0]
+        player_x = self.game.player.rect.x
+        self.game.held_keys.add("p")
+        self.game.update(1 / 60)
+        self.assertIs(self.game.player.active_beams[0].target, bridge)
+        self.assertEqual(self.game.player.active_beams[0].side, "right")
+        self.assertGreater(bridge.velocity.x, 0)
+        self.assertEqual(self.game.player.rect.x, player_x)
+        for _ in range(120):
+            self.game.update(1 / 60)
+        self.assertGreaterEqual(bridge.rect.x, 500)
 
 
 if __name__ == "__main__":
