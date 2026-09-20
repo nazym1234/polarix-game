@@ -63,8 +63,11 @@ class Body:
 @dataclass
 class MetalBlock(Body):
     mass: float = 1.2
+    activated: bool = False
 
     def update(self, dt: float, solids: list[Solid]) -> None:
+        if not self.activated:
+            return
         self.velocity.y = min(900, self.velocity.y + GRAVITY * dt)
         self.velocity.x *= math.pow(0.02, dt)
         self.velocity.x = max(-620, min(620, self.velocity.x))
@@ -104,7 +107,7 @@ class Player(Body):
         solids: list[Solid],
         blocks: list[MetalBlock],
     ) -> None:
-        move = int("d" in keys or "right" in keys) - int("q" in keys or "left" in keys)
+        move = int("d" in keys or "right" in keys) - int("a" in keys or "q" in keys or "left" in keys)
         if move:
             self.facing = move
         desired = move * PLAYER_SPEED
@@ -113,8 +116,8 @@ class Player(Body):
         self.velocity.y = min(950, self.velocity.y + GRAVITY * dt)
 
         actions = []
-        if "a" in keys: actions.append(("left", "attract", CYAN))
-        if "z" in keys: actions.append(("left", "repel", CYAN))
+        if "j" in keys: actions.append(("left", "attract", CYAN))
+        if "k" in keys: actions.append(("left", "repel", CYAN))
         if "o" in keys: actions.append(("right", "attract", ORANGE))
         if "p" in keys: actions.append(("right", "repel", ORANGE))
 
@@ -173,6 +176,7 @@ class Player(Body):
         sign = 1 if mode == "attract" else -1
         force = MAGNET_FORCE * (1 - distance / MAGNET_RANGE * 0.45)
         if isinstance(target, MetalBlock):
+            target.activated = True
             target.velocity += -direction * force * sign * dt / target.mass
         else:
             self.velocity += direction * force * sign * dt
